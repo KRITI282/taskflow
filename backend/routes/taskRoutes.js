@@ -1,0 +1,12 @@
+import { Router } from "express";
+import auth from "../middleware/auth.js";
+import { listTasks, createTask, updateTask, deleteTask, listComments, addComment } from "../controllers/taskController.js";
+const router = Router();
+router.use(auth);
+router.get("/", listTasks);
+router.post("/", createTask);
+router.put("/:id", updateTask);
+router.delete("/:id", deleteTask);
+router.get("/:id/comments", listComments);
+router.post("/:id/comments", addComment);
+export default router;

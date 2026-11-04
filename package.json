@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
+    "build": "npm run build --prefix frontend",
     "start": "node backend/server.js"
   },
   "dependencies": {
@@ -17,4 +17,3 @@
     "socket.io": "^4.7.5"
   }
 }
-

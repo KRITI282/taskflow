@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "echo \"backend ready\"",
+    "build": "node -e \"console.log('Backend build complete')\"",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },

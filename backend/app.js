@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
@@ -9,9 +12,11 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
-// Enable CORS for all incoming requests in serverless / production
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
@@ -38,19 +43,15 @@ export async function connectDB() {
   }
 }
 
-// Health and Root checks
-app.get(["/", "/api"], (_req, res) => {
-  res.json({ message: "TaskFlow Unified API is running", status: "healthy" });
-});
-
-app.get(["/health", "/api/health"], (_req, res) => {
+// Health check endpoint
+app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
 
-// Mount routes with and without /api prefix for flexible serverless rewrites
+// Mount API routes
 app.use("/api/auth", authRoutes);
 app.use("/auth", authRoutes);
 
@@ -63,6 +64,30 @@ app.use("/tasks", taskRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/notifications", notificationRoutes);
 
+// Static frontend serving if public folder exists
+const publicPath = path.join(__dirname, "public");
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
+  app.get("*", (req, res, next) => {
+    if (
+      req.path.startsWith("/api") ||
+      req.path.startsWith("/auth") ||
+      req.path.startsWith("/projects") && req.method !== "GET"
+    ) {
+      return next();
+    }
+    const indexPath = path.join(publicPath, "index.html");
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+    next();
+  });
+} else {
+  app.get(["/", "/api"], (_req, res) => {
+    res.json({ message: "TaskFlow Unified API is running", status: "healthy" });
+  });
+}
+
 // Global error handler
 app.use((err, _req, res, _next) => {
   console.error("[TaskFlow API Error]", err);
@@ -70,4 +95,3 @@ app.use((err, _req, res, _next) => {
 });
 
 export default app;
-

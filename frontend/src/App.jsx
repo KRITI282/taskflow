@@ -12,15 +12,21 @@ import Projects from "./pages/Projects";
 import ProjectBoard from "./pages/ProjectBoard";
 import Notifications from "./pages/Notifications";
 
-const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+// In production on Vercel without external socket server, default to empty to avoid console errors
+const socketUrl =
+  import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? "" : "http://localhost:5000");
 
 function LiveConnection() {
   const { user } = useAuth();
   const [live, setLive] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    const socket = io(socketUrl);
+    if (!user || !socketUrl) return;
+    const socket = io(socketUrl, {
+      autoConnect: true,
+      reconnectionAttempts: 3,
+      timeout: 5000,
+    });
     socket.on("connect", () => {
       setLive(true);
       socket.emit("join", user.id);
